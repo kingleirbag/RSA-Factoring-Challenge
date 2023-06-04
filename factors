@@ -1,41 +1,57 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import sys
-import time
 import signal
 
-def factorize(n):
-    for i in range(2, int(n**0.5) + 1):
+
+def factorize_number(n):
+    factors = []
+    i = 2
+    while i * i <= n:
         if n % i == 0:
-            return (i, n // i)
-    return None
+            factors.append((i, n // i))
+            n //= i
+        else:
+            i += 1
+    if n > 1:
+        factors.append((n, 1))
+    return factors
 
-def timeout_handler(signum, frame):
-    raise TimeoutError("TIME LIMIT EXCEEDED")
 
-if __name__ == "__main__":
+def handle_timeout(signum, frame):
+    print("TIME LIMIT EXCEEDED")
+    sys.exit(0)
+
+
+def main():
     if len(sys.argv) != 2:
         print("Usage: factors <file>")
-        exit()
+        return
 
-    input_file = sys.argv[1]
+    filename = sys.argv[1]
+
+    # Set the timeout value in seconds
+    timeout = 5
+
+    # Register the signal handler for timeout
+    signal.signal(signal.SIGALRM, handle_timeout)
+    signal.alarm(timeout)
 
     try:
-        with open(input_file, 'r') as f:
-            lines = f.readlines()
+        with open(filename, 'r') as file:
+            for line in file:
+                n = int(line.strip())
+                factorizations = factorize_number(n)
+                for factor in factorizations:
+                    print("{}={}*{}".format(n, factor[0], factor[1]))
     except FileNotFoundError:
         print("FILE NOT FOUND")
-        exit()
+    except ValueError:
+        print("Invalid input. The file should contain only valid natural numbers.")
 
-    signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(5)  # Set timeout to 5 seconds
+    # Cancel the alarm
+    signal.alarm(0)
 
-    try:
-        for line in lines:
-            n = int(line.strip())
-            factors = factorize(n)
-            if factors:
-                print(f"{n}={factors[0]}*{factors[1]}")
-    except TimeoutError:
-        print("TIME LIMIT EXCEEDED")
-        exit()
+
+if __name__ == '__main__':
+    main()
