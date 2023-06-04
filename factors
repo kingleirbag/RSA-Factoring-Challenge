@@ -1,57 +1,48 @@
-#!/usr/bin/env python3
+#!/usr/bin/env bash
 
-import sys
-import signal
+check_factor()
+{
+        if [ $# -ne 3 ];
+        then
+                args=("$@")
+                count=0
+                num2=1
+                for a in ${args[*]};
+                do
+                        if [ $count -gt 1 ];
+                        then
+                                num2=$(echo $a*$num2 | bc)
+                        fi
+                        count=$((count + 1))
+                done
+        else
+                num2=$3
+        fi
 
+        num1=$2
+        num=$(echo "$1" | tr ':' '=')
 
-def factorize_number(n):
-    factors = []
-    i = 2
-    while i * i <= n:
-        if n % i == 0:
-            factors.append((i, n // i))
-            n //= i
-        else:
-            i += 1
-    if n > 1:
-        factors.append((n, 1))
-    return factors
+        result=$(echo "if($num2 > $num1) 1 else 0" | bc)
+	        if ((result == 1)); then
+		        numcp=$num1
+		        num1=$num2
+		        num2=$numcp
+                fi
 
+        echo "$num$num1*$num2"
+}
 
-def handle_timeout(signum, frame):
-    print("TIME LIMIT EXCEEDED")
-    sys.exit(0)
+if [ $# -ne 1 ]
+then
+        echo 'Usage: factors <file>'
+        exit 1
+else
 
+        while read i
+        do
 
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: factors <file>")
-        return
+                result=$(factor "$i")
+                check_factor $result
 
-    filename = sys.argv[1]
-
-    # Set the timeout value in seconds
-    timeout = 5
-
-    # Register the signal handler for timeout
-    signal.signal(signal.SIGALRM, handle_timeout)
-    signal.alarm(timeout)
-
-    try:
-        with open(filename, 'r') as file:
-            for line in file:
-                n = int(line.strip())
-                factorizations = factorize_number(n)
-                for factor in factorizations:
-                    print("{}={}*{}".format(n, factor[0], factor[1]))
-    except FileNotFoundError:
-        print("FILE NOT FOUND")
-    except ValueError:
-        print("Invalid input. The file should contain only valid natural numbers.")
-
-    # Cancel the alarm
-    signal.alarm(0)
-
-
-if __name__ == '__main__':
-    main()
+        done < "$1"
+fi
