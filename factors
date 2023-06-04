@@ -1,47 +1,35 @@
-#!/usr/bin/python3
-import sys
-import random
-import time
+def factorize(n):
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0:
+            return (i, n // i)
+    return None
 
-def is_prime(n, p=20):
-    if n == 2 or n == 3:
-        return True
-    if n < 2 or n % 2 == 0:
-        return False
-
-    d = n - 1
-    r = 0
-    while d % 2 == 0:
-        d //= 2
-        r += 1
-
-    for _ in range(r - 1):
-        x = pow(x, 2, n)
-        if x == n - 1:
-            break
-    else:
-        return True
+def timeout_handler(signum, frame):
+    raise TimeoutError("TIME LIMIT EXCEEDED")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: rsa <file>")
+        print("Usage: factors <file>")
         exit()
 
-    ipf = sys.argv[1]
+    input_file = sys.argv[1]
+
     try:
-        with open(ipf, 'r') as f:
+        with open(input_file, 'r') as f:
             lines = f.readlines()
     except FileNotFoundError:
         print("FILE NOT FOUND")
         exit()
 
-    start_time = time.time()
-    n = int(lines[0].strip())
-    for i in range(2, n // 2):
-        if n % i == 0 and is_prime(i) and is_prime(n // i):
-            print(f"{n} = {i} * {n // i}")
-            break
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(5)  # Set timeout to 5 seconds
 
-    if time.time() - start_time > 5:
+    try:
+        for line in lines:
+            n = int(line.strip())
+            factors = factorize(n)
+            if factors:
+                print(f"{n}={factors[0]}*{factors[1]}")
+    except TimeoutError:
         print("TIME LIMIT EXCEEDED")
         exit()
